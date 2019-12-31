@@ -84,32 +84,21 @@ function createMap(earthquakes) {
     collapsed: false
   }).addTo(myMap);
 
-  // Adding Legend
-  var legend = L.control({position: 'bottomright'});
+  var info = L.control({
+      position: "bottomright"
+  });
 
-    legend.onAdd = function (map) {
+  info.onAdd = function(){
+      var div = L.DomUtil.create("div","legend");
+      return div;
+  }
 
-        var div = L.DomUtil.create('div', 'info legend'),
-            grades = [0, 10, 20, 50, 100, 200, 500, 1000],
-            labels = [],
-            from, to;
+  info.addTo(myMap);
 
-        for (var i = 0; i < grades.length; i++) {
-            from = grades[i];
-            to = grades[i + 1];
+  document.querySelector(".legend").innerHTML=displayLegend();
 
-            labels.push(
-                '<i style="background:' + getColor(from + 1) + '"></i> ' +
-                from + (to ? '&ndash;' + to : '+'));
-        }
-
-        div.innerHTML = labels.join('<br>');
-        return div;
-    };
-
-    legend.addTo(map);
-  
 }
+
 
 //----------------------------------------------------------------------------
 // chooseColor function for each magnitude Range
@@ -123,13 +112,36 @@ function chooseColor(magnitude) {
             "greenyellow"; // <= 1 default
 }
 
-function getColor(d) {
-  return d > 1000 ? '#800026' :
-         d > 500  ? '#BD0026' :
-         d > 200  ? '#E31A1C' :
-         d > 100  ? '#FC4E2A' :
-         d > 50   ? '#FD8D3C' :
-         d > 20   ? '#FEB24C' :
-         d > 10   ? '#FED976' :
-                    '#FFEDA0';
+
+function displayLegend(){
+  var legendInfo = [{
+      limit: "Mag: 0-1",
+      color: "greenyellow"
+  },{
+      limit: "Mag: 1-2",
+      color: "yellowgreen"
+  },{
+      limit:"Mag: 2-3",
+      color:"yellow"
+  },{
+      limit:"Mag: 3-4",
+      color:"gold"
+  },{
+      limit:"Mag: 4-5",
+      color:"orange"
+  },{
+      limit:"Mag: 5+",
+      color:"red"
+  }];
+
+  var header = "<h3>Magnitude</h3><hr>";
+
+  var strng = "";
+ 
+  for (i = 0; i < legendInfo.length; i++){
+      strng += "<p style = \"background-color: "+legendInfo[i].color+"\">"+legendInfo[i].limit+"</p> ";
+  }
+  
+  return header+strng;
+
 }
