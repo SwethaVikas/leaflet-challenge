@@ -1,6 +1,5 @@
 // Store our API endpoint inside queryUrl
-var queryUrl = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2014-01-01&endtime=" +
-  "2014-01-02&maxlongitude=-69.52148437&minlongitude=-123.83789062&maxlatitude=48.74894534&minlatitude=25.16517337";
+var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson";
 
 // Perform a GET request to the query URL
 d3.json(queryUrl, function(data) {
@@ -8,19 +7,33 @@ d3.json(queryUrl, function(data) {
   createFeatures(data.features);
 });
 
-function createFeatures(earthquakeData) {
+// Define a markerSize function that will give each city a different radius based on its population
+function markerSize(magnitude) {
+  return magnitude * 2;
+}
 
+function createFeatures(earthquakeData) {
+  
   // Define a function we want to run once for each feature in the features array
   // Give each feature a popup describing the place and time of the earthquake
   function onEachFeature(feature, layer) {
+    return new L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {
+      fillOpacity: 1,
+      color: chooseColor(feature.properties.mag),
+      fillColor: chooseColor(feature.properties.mag),
+      radius:  markerSize(feature.properties.mag)
+    });
+  }
+  function onEachData(feature,layer) {
     layer.bindPopup("<h3>" + feature.properties.place +
-      "</h3><hr><p>" + new Date(feature.properties.time) + "</p>");
+      "</h3><hr><p>" + new Date(feature.properties.time) + "</p><hr><p>Magnitude: " + feature.properties.mag + "</p>");
   }
 
   // Create a GeoJSON layer containing the features array on the earthquakeData object
   // Run the onEachFeature function once for each piece of data in the array
   var earthquakes = L.geoJSON(earthquakeData, {
-    onEachFeature: onEachFeature
+    onEachFeature: onEachData,
+    pointToLayer: onEachFeature
   });
 
   // Sending our earthquakes layer to the createMap function
@@ -70,4 +83,53 @@ function createMap(earthquakes) {
   L.control.layers(baseMaps, overlayMaps, {
     collapsed: false
   }).addTo(myMap);
+
+  // Adding Legend
+  var legend = L.control({position: 'bottomright'});
+
+    legend.onAdd = function (map) {
+
+        var div = L.DomUtil.create('div', 'info legend'),
+            grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+            labels = [],
+            from, to;
+
+        for (var i = 0; i < grades.length; i++) {
+            from = grades[i];
+            to = grades[i + 1];
+
+            labels.push(
+                '<i style="background:' + getColor(from + 1) + '"></i> ' +
+                from + (to ? '&ndash;' + to : '+'));
+        }
+
+        div.innerHTML = labels.join('<br>');
+        return div;
+    };
+
+    legend.addTo(map);
+  
+}
+
+//----------------------------------------------------------------------------
+// chooseColor function for each magnitude Range
+//----------------------------------------------------------------------------
+function chooseColor(magnitude) {
+  return magnitude > 5 ? "red":
+    magnitude > 4 ? "orange":
+      magnitude > 3 ? "gold":
+        magnitude > 2 ? "yellow":
+          magnitude > 1 ? "yellowgreen":
+            "greenyellow"; // <= 1 default
+}
+
+function getColor(d) {
+  return d > 1000 ? '#800026' :
+         d > 500  ? '#BD0026' :
+         d > 200  ? '#E31A1C' :
+         d > 100  ? '#FC4E2A' :
+         d > 50   ? '#FD8D3C' :
+         d > 20   ? '#FEB24C' :
+         d > 10   ? '#FED976' :
+                    '#FFEDA0';
 }
